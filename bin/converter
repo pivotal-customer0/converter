@@ -1,0 +1,232 @@
+#!env ruby
+require 'yaml'
+require 'optparse'
+require 'converter'
+
+options = {}
+options[:password] = 'admin'
+options[:ip_ranges] = []
+
+class ReplacementPair
+  #Expects arg to be in the format of old:new
+  def initialize(arg)
+    @old, @new = arg.split(':')
+  end
+
+  attr_accessor :old, :new
+end
+
+
+opts = OptionParser.new do |opts|
+  opts.banner = 'Usage: flavor_maker.rb [options]'
+
+  opts.on('--manifest MANIFEST', 'Specifies the manifest to convert') do |v| options[:manifest] = v end
+
+  opts.on('--name NAME', 'release name (e.g. --name redis)') do |v| options[:name] = v end
+
+  opts.on('--password PASSWORD', 'password to use in new manifest, defaults to "admin"') do |v|
+    options[:password] = v
+  end
+
+  opts.on('--swap-domain OLD_DOMAIN:NEW_DOMAIN',
+          'Replaces domain on the left with domain on the right',
+          'e.g. --swap-domain haas-02.pez.pivotal.io:haas-04.pez.pivotal.io',
+          'take heed, this is a simple string replace, adding "https://" is probably wrong') do |v|
+    options[:domains] = ReplacementPair.new(v)
+  end
+
+  opts.on('--swap-ip-ranges OLD_RANGE1:NEW_RANGE1,OLD_RANGE2:NEW_RANGE2',
+          'Replaces ips on the left with ips on the right and will accept a comma separated list of ranges to swap',
+          'Examples:',
+            "\t--swap-ip-ranges 10.65.170:10.65.172",
+            "\t--swap-ip-ranges 10.65.170:10.65.172,10.65.171:10.65.173",
+          'take heed, this is a simple string replace') do |v|
+    v.split(',').each do |range|
+      options[:ip_ranges].push(ReplacementPair.new(range))
+    end
+  end
+
+  opts.on('--output-path PATH', 'where should we put the new manifest.',
+          'Defaults to <name>-photon.yml in the current directory') do |v|
+    options[:output_path] = v
+  end
+
+  opts.on('--sanitize-partition', 'The thing opsman does with the guid after the partition makes sense for a machine',
+    'but it makes life hard for a human when reading. This flag drops it'
+  ) do |v|
+    options[:sanitize_partition] = true
+  end
+
+  opts.on('--dns DNS', 'Overwrite (no matching) DNS with argument. If not provided we leave whatevers in the',
+          'manifest alone.') do |v|
+    options[:dns] = v
+  end
+
+  options[:help] = opts.help
+
+end
+opts.parse!
+
+if options[:name].nil? or options[:manifest].nil?
+  puts options[:help]
+  exit(1)
+end
+
+name = options[:name]
+if options[:output_path].nil?
+  options[:output_path] = name + '-photon.yml'
+end
+
+# The hot mess below is why we should script while watching moves... this whole thing is a "could we" experiment
+# it appears the approach is viable but the tool requires more investment.
+
+def swap_stemcells(yaml)
+  yaml.each_key do | key |
+    if key == 'stemcell'
+      yaml[key] = {
+          'name' =>  'bosh-esxcloud-esxi-ubuntu-trusty-go_agent',
+          'version' => '0000'
+      }
+    elsif yaml[key].is_a? Hash
+      swap_stemcells(yaml[key])
+    elsif yaml[key].is_a? Array
+      yaml[key].each do |value|
+        swap_stemcells(value) if value.is_a? Hash
+      end
+    end #TODO this logic misses arrays of arrays which for now does not seem to hurt
+  end
+end
+
+def change_value_sub_strings(yaml, from, to)
+  yaml.each do |key, value|
+    if value.is_a? Hash
+      change_value_sub_strings(yaml[key], from, to)
+    elsif key.is_a? Hash
+      change_value_sub_strings(key, from, to)
+    elsif value.is_a? Array
+      value.each_with_index do | v,i |
+        if v.is_a? Hash
+          change_value_sub_strings(yaml[key], from, to)
+        elsif v.is_a? String
+          yaml[key][i] = v.gsub(from,to)
+        end
+      end
+    elsif value.is_a? String
+      yaml[key] = value.gsub(from, to)
+    end
+  end
+end
+
+def change_ips(yaml, from, to)
+  yaml.each do |key,value|
+    if value.is_a? Array
+      value.each_with_index  do |v, idx|
+        change_ips(v, from, to) if v.is_a? Hash
+        if v.is_a? String and v.include? from
+            yaml[key][idx] = v.gsub(from, to)
+        end
+      end
+    elsif value.is_a? Hash
+      change_ips(value, from, to)
+    end
+  end
+end
+
+def sanitize_partition(yaml)
+  yaml.each do |key, value|
+    if 'name' == key and value.match /partition-\w+/
+      new_value = value.sub(/partition.*/, 'partition')
+      change_value_sub_strings(yaml, value, new_value)
+      yaml[key] = new_value
+    end
+    if value.is_a? Array
+      value.each do |v|
+        unless v.is_a? String
+          sanitize_partition(v)
+        end
+      end
+    elsif value.is_a? Hash
+      sanitize_partition(value)
+    end
+  end
+end
+
+def add_cf_password_to_errands(yaml, password)
+  yaml['jobs'].each do |job|
+    if 'errand' == job['lifecycle']
+      job['properties'].each do |k, v|
+        if v.is_a? Hash and v.has_key?("cf")
+          if v['cf'].has_key?("admin_password")
+            v['cf']['admin_password']= password
+          end
+        elsif k == 'cf' and v.has_key? 'admin_password'
+          v['admin_password'] = password
+        end
+      end
+    end
+  end
+end
+
+###############################################################################
+# script starts here
+###############################################################################
+if File.identical?( __FILE__, $0)
+  node = YAML.load_file options[:manifest]
+
+  FlavorMaker.convert_vsphere_cloud_props_to_photon node['resource_pools']
+  # node['resource_pools'].each do |v|
+  #   v['cloud_properties'] = { 'vm_flavor' => 'core-200', 'disk_flavor' =>'core-200'}
+  # end
+
+  FlavorMaker.convert_vsphere_cloud_props_to_photon node['compilation']
+  # node['compilation']['cloud_properties'] = {
+  #     'vm_flavor' => 'core-200',
+  #     'disk_flavor' =>'core-200'
+  # }
+
+  FlavorMaker.convert_vsphere_disk_pool_to_photon node['disk_pools']
+  # node['disk_pools'].each_with_index do |v, index|
+  #   node['disk_pools'][index] = {
+  #       'name' => v['name'],
+  #       'disk_size' => 10240,
+  #       'cloud_properties' =>{
+  #         'disk_flavor' =>'core-200',
+  #       }
+  #   }
+  # end
+
+  node['name'] = "#{name}-photon"
+
+  # find uaa
+  if 'cf' == name
+    idx=0
+    node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? "uaa-partition" end
+    cf_password=node['jobs'][idx]['properties']['uaa']['scim']['users'][0].split('|')[1]
+    change_value_sub_strings(node, cf_password, options[:password])
+  end
+
+  add_cf_password_to_errands(node, options[:password])
+
+  unless options[:domains].nil?
+    change_value_sub_strings(node, options[:domains].old, options[:domains].new)
+  end
+
+  unless options[:ip_ranges].nil?
+    options[:ip_ranges].each do |range|
+      change_value_sub_strings(node, range.old, range.new)
+      change_ips(node, range.old, range.new)
+    end
+  end
+
+  unless options[:dns].nil?
+    node['networks'][0]['subnets'][0]['dns'] = [ options[:dns] ]
+  end
+
+  if options[:sanitize_partition]
+    sanitize_partition(node)
+  end
+
+  #TODO We don't let anyone change the stemcell yet became we only have the one.
+  swap_stemcells node
+  File.open(options[:output_path], 'w') { |f| YAML.dump(node, f) }
+end
