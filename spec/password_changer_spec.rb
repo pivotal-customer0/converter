@@ -15,12 +15,24 @@ jobs:
         userids_enabled: true
         users:
         - admin|b76b870cddde4ec32159|scim.write,scim.read,openid,cloud_controller.admin,dashboard.user,console.admin,console.support,doppler.firehose,notification_preferences.read,notification_preferences.write,notifications.manage,notification_templates.read,notification_templates.write,emails.write,notifications.write,zones.read,zones.write
+- name: notifications
+  properties:
+    notifications:
+      cf:
+        admin_user: admin
+        admin_password: b76b870cddde4ec32159
+
 END
   before do
     yml = YAML.load manifest
   end
 
   context 'uaa' do
+    it 'should get the cf admin password' do
+      password = PasswordChanger.get_cf_admin_password yml
+      expect(password).to eql 'b76b870cddde4ec32159'
+    end
+
     it 'should set the uaa password' do
       PasswordChanger.set_admin_password yml, 'new-password'
       admin = yml['jobs'][0]['properties']['uaa']['scim']['users'][0]

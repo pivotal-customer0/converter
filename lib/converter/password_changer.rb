@@ -11,4 +11,17 @@ class PasswordChanger
       yaml.find{ |*a| self.set_admin_password(a.last, password) }
     end
   end
+
+  def self.get_cf_admin_password(yaml)
+    yaml['jobs'].each do | job |
+      if job['name'].include?('uaa-partition')
+        job['properties']['uaa']['scim']['users'].each do |user|
+          split_user = user.split('|')
+          if 'admin' == split_user[0]
+            return split_user[1]
+          end
+        end
+      end
+    end
+  end
 end

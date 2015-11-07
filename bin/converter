@@ -185,7 +185,7 @@ end
 
 node['name'] = "#{name}-photon"
 
-# find uaa
+find uaa
 if 'cf' == name
   idx=0
   node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? 'uaa-partition' end
