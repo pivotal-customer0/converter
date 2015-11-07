@@ -34,14 +34,14 @@ END
     end
 
     it 'should set the uaa password' do
-      Authentication.set_admin_password yaml, 'new-password'
+      Authentication.set_cf_admin_password yaml, 'new-password'
       admin = yaml['jobs'][0]['properties']['uaa']['scim']['users'][0]
       password = admin.split('|')[1]
       expect(password).to eql('new-password')
     end
 
     it 'should set dependent jobs with passwords' do
-      Authentication.set_admin_password yaml, 'funky-town'
+      Authentication.set_cf_admin_password yaml, 'funky-town'
       notifications_admin_password = yaml['jobs'][1]['properties']['notifications']['cf']['admin_password']
       expect(notifications_admin_password).to eq('funky-town')
     end

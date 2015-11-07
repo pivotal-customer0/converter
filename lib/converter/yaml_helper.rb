@@ -1,11 +1,11 @@
 class YAMLHelper
   def self.change_value_sub_strings(yaml, from, to)
     yaml.each do |key, value|
-      if value.is_a? Hash
+      if value.respond_to? :key?
         change_value_sub_strings(yaml[key], from, to)
-      elsif key.is_a? Hash
+      elsif key.respond_to? :key?
         change_value_sub_strings(key, from, to)
-      elsif value.is_a? Array
+      elsif value.respond_to? :each
         value.each_with_index do | v,i |
           if v.is_a? Hash
             change_value_sub_strings(yaml[key], from, to)

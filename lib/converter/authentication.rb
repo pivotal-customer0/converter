@@ -1,6 +1,6 @@
 require 'converter/yaml_helper'
 class Authentication
-  def self.set_admin_password(yaml, password)
+  def self.set_cf_admin_password(yaml, password)
     old_password = self.get_cf_admin_password yaml
     self.set_uaa_scim_password yaml, password
     YAMLHelper.change_value_sub_strings yaml, old_password, password
