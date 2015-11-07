@@ -61,15 +61,23 @@ jobs:
       api_url: https://api.cf.haas-02.pez.pivotal.io
       admin_username: admin
       admin_password: b76b870cddde4ec32159
-    END
+- name: broker-deregistrar
+  lifecycle: errand
+  properties:
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      admin_username: admin
+      admin_password: b76b870cddde4ec32159
+END
 
     before do
       yaml = YAML.load manifest
     end
 
-    it 'should change the cf admin password to funky-town' do
+    it 'should change the cf admin password to funky-town for both jobs' do
       Authentication.set_cf_admin_password_for_errands yaml, 'funky-town'
       expect(yaml['jobs'][0]['properties']['cf']['admin_password']).to eql('funky-town')
+      expect(yaml['jobs'][1]['properties']['cf']['admin_password']).to eql('funky-town')
     end
   end
 

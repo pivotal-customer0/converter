@@ -152,13 +152,10 @@ end
 node['name'] = "#{name}-photon"
 
 if 'cf' == name
-  idx=0
-  node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? 'uaa-partition' end
-  cf_password=node['jobs'][idx]['properties']['uaa']['scim']['users'][0].split('|')[1]
-  YAMLHelper.change_value_sub_strings(node, cf_password, options[:password])
+  Authentication.set_cf_admin_password yaml, options[:password]
+else
+  Authentication.set_cf_admin_password_for_errands(node, options[:password])
 end
-
-Authentication.set_cf_admin_password_for_errands(node, options[:password])
 
 unless options[:domains].nil?
   YAMLHelper.change_value_sub_strings(node, options[:domains].old, options[:domains].new)
