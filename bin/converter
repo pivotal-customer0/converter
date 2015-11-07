@@ -188,7 +188,7 @@ node['name'] = "#{name}-photon"
 # find uaa
 if 'cf' == name
   idx=0
-  node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? "uaa-partition" end
+  node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? 'uaa-partition' end
   cf_password=node['jobs'][idx]['properties']['uaa']['scim']['users'][0].split('|')[1]
   change_value_sub_strings(node, cf_password, options[:password])
 end
