@@ -32,10 +32,28 @@ END
         expect(Domain.get_domain yaml).to eql 'cf.haas-02.pez.pivotal.io'
       end
 
-      it 'should change the current domain' do
-        Domain.change_domain yaml, 'new.domain.example.com'
-        expect(Domain.get_domain yaml).to eql 'new.domain.example.com'
+      context 'when changing domains' do
+        new_domain = 'new.domain.example.com'
+
+        before do
+          Domain.change_domain yaml, new_domain
+        end
+
+        it 'should change the current domain' do
+          expect(Domain.get_domain yaml).to eql new_domain
+        end
+
+        it 'should change the system domain' do
+          system_domain = yaml['jobs'][0]['properties']['system_domain']
+          expect(system_domain).to eql new_domain
+        end
+
+        it 'should change the api endpoint' do
+          api_endpoint = yaml['jobs'][0]['properties']['route_registrar']['routes'][0]['uris'][0]
+          expect(api_endpoint).to eql "api.#{new_domain}"
+        end
       end
+
     end
   end
 end

@@ -6,8 +6,7 @@ class Domain
   end
 
   def self.change_domain(yaml, new_domain)
-    cc = get_cloud_controller_job yaml
-    cc['properties']['domain'] = new_domain
+    YAMLHelper.change_value_sub_strings yaml, get_domain(yaml), new_domain
   end
 
   def self.get_cloud_controller_job(yaml)
