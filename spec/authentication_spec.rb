@@ -80,7 +80,4 @@ END
       expect(yaml['jobs'][1]['properties']['cf']['admin_password']).to eql('funky-town')
     end
   end
-
-
-
 end
