@@ -18,4 +18,12 @@ class YAMLHelper
       end
     end
   end
+
+  def self.find(yaml, key, &block)
+    if yaml.respond_to?(:key?) && yaml.key?(key)
+      block.call(yaml)
+    elsif yaml.respond_to?(:each)
+      yaml.find { |*a| self.find(a.last, key, &block)}
+    end
+  end
 end

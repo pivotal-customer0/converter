@@ -3,4 +3,4 @@ bundle exec converter --name redis --swap-ip-ranges 10.65.170:10.65.172,10.65.17
     --swap-domain haas-02.pez.pivotal.io:haas-04.pez.pivotal.io --sanitize-partition \
     --manifest spec/test_manifests/p-redis-4644ea20704f8ff3556d.yml
 
-diff -bwy redis-photon.yml test_manifests/redis-photon.yml --suppress-common-lines
+diff -bwy redis-photon.yml spec/test_manifests/redis-photon.yml --suppress-common-lines

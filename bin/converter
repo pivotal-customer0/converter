@@ -3,6 +3,7 @@ require 'yaml'
 require 'optparse'
 require 'converter/flavor_maker'
 require 'converter/yaml_helper'
+require 'converter/authentication'
 
 options = {}
 options[:password] = 'admin'
@@ -132,22 +133,6 @@ def sanitize_partition(yaml)
   end
 end
 
-def add_cf_password_to_errands(yaml, password)
-  yaml['jobs'].each do |job|
-    if 'errand' == job['lifecycle']
-      job['properties'].each do |k, v|
-        if v.is_a? Hash and v.has_key?("cf")
-          if v['cf'].has_key?("admin_password")
-            v['cf']['admin_password']= password
-          end
-        elsif k == 'cf' and v.has_key? 'admin_password'
-          v['admin_password'] = password
-        end
-      end
-    end
-  end
-end
-
 ###############################################################################
 # script starts here
 ###############################################################################
@@ -166,7 +151,6 @@ end
 
 node['name'] = "#{name}-photon"
 
-find uaa
 if 'cf' == name
   idx=0
   node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? 'uaa-partition' end
@@ -174,7 +158,7 @@ if 'cf' == name
   YAMLHelper.change_value_sub_strings(node, cf_password, options[:password])
 end
 
-add_cf_password_to_errands(node, options[:password])
+Authentication.set_cf_admin_password_for_errands(node, options[:password])
 
 unless options[:domains].nil?
   YAMLHelper.change_value_sub_strings(node, options[:domains].old, options[:domains].new)

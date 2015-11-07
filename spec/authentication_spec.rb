@@ -2,8 +2,9 @@ require 'rspec'
 require 'converter/authentication'
 
 describe 'changes the cf admin password' do
-  yaml = nil
-  manifest = <<END
+  context  'on cf manifests' do
+    yaml = nil
+    manifest = <<END
 ---
 jobs:
 - name: uaa-partition-a24ba4e9a226f8bd1d83
@@ -23,27 +24,55 @@ jobs:
         admin_password: b76b870cddde4ec32159
 
 END
-  before do
-    yaml = YAML.load manifest
+    before do
+      yaml = YAML.load manifest
+    end
+
+    context 'uaa' do
+      it 'should get the cf admin password' do
+        password = Authentication.get_cf_admin_password yaml
+        expect(password).to eql 'b76b870cddde4ec32159'
+      end
+
+      it 'should set the uaa password' do
+        Authentication.set_cf_admin_password yaml, 'new-password'
+        admin = yaml['jobs'][0]['properties']['uaa']['scim']['users'][0]
+        password = admin.split('|')[1]
+        expect(password).to eql('new-password')
+      end
+
+      it 'should set dependent jobs with passwords' do
+        Authentication.set_cf_admin_password yaml, 'funky-town'
+        notifications_admin_password = yaml['jobs'][1]['properties']['notifications']['cf']['admin_password']
+        expect(notifications_admin_password).to eq('funky-town')
+      end
+    end
   end
 
-  context 'uaa' do
-    it 'should get the cf admin password' do
-      password = Authentication.get_cf_admin_password yaml
-      expect(password).to eql 'b76b870cddde4ec32159'
+  context 'on redis manifests' do
+    yaml = nil
+    manifest = <<-END
+---
+jobs:
+- name: broker-registrar
+  lifecycle: errand
+  properties:
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      admin_username: admin
+      admin_password: b76b870cddde4ec32159
+    END
+
+    before do
+      yaml = YAML.load manifest
     end
 
-    it 'should set the uaa password' do
-      Authentication.set_cf_admin_password yaml, 'new-password'
-      admin = yaml['jobs'][0]['properties']['uaa']['scim']['users'][0]
-      password = admin.split('|')[1]
-      expect(password).to eql('new-password')
-    end
-
-    it 'should set dependent jobs with passwords' do
-      Authentication.set_cf_admin_password yaml, 'funky-town'
-      notifications_admin_password = yaml['jobs'][1]['properties']['notifications']['cf']['admin_password']
-      expect(notifications_admin_password).to eq('funky-town')
+    it 'should change the cf admin password to funky-town' do
+      Authentication.set_cf_admin_password_for_errands yaml, 'funky-town'
+      expect(yaml['jobs'][0]['properties']['cf']['admin_password']).to eql('funky-town')
     end
   end
+
+
+
 end

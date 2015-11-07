@@ -30,4 +30,12 @@ class Authentication
       end
     end
   end
+
+  def self.set_cf_admin_password_for_errands(yaml, password)
+    YAMLHelper.find yaml, 'cf' do |y|
+      if y['cf'].key? 'admin_password'
+        y['cf']['admin_password'] = password
+      end
+    end
+  end
 end
