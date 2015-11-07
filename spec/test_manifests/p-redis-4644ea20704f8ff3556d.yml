@@ -1,0 +1,243 @@
+---
+name: p-redis-4644ea20704f8ff3556d
+director_uuid: ignore
+releases:
+- name: cf-redis
+  version: '346.3'
+networks:
+- name: default
+  subnets:
+  - range: 10.65.170.0/23
+    gateway: 10.65.170.1
+    dns:
+    - 10.65.162.2
+    static:
+    - 10.65.170.161
+    - 10.65.170.162
+    - 10.65.170.163
+    - 10.65.170.164
+    - 10.65.170.165
+    - 10.65.170.166
+    reserved:
+    - 10.65.170.2-10.65.170.160
+    - 10.65.170.177-10.65.171.254
+    cloud_properties:
+      name: Photon_PCF
+resource_pools:
+- name: cf-redis-broker-partition-a24ba4e9a226f8bd1d83
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 1024
+    disk: 4096
+    cpu: 2
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$44703f90fcf77063$zdCdV3J5ZmUgdIDc34iwbeE/Xo3tdaK2SPDMRsokFTC.Re6HaxNuZqJhWoOF0nX2x3CO8jMe41wXqDGiS4XUu1"
+- name: dedicated-node-partition-a24ba4e9a226f8bd1d83
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 1024
+    disk: 4096
+    cpu: 2
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$0211945e446884b5$eLQ69B5sl23u.CJL0tQu.Iw/p8qzCDRZflvXBofYrZDRR7fC9Zmfn9VC45VTd2lWbEsateWtUtgpwqp9g5Cra/"
+- name: broker-registrar
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 1024
+    disk: 2048
+    cpu: 1
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$b5666b64f60bff7f$OLRUNRiyHwUvP96vUnzwyk6aAzf9aK.9IldNImFZvHGulSvHYToz0tYGkSuUBD9R.z7oTutw0GnyjpbCZeRdD1"
+- name: broker-deregistrar
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 1024
+    disk: 2048
+    cpu: 1
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$118b305c6dde7d00$y99cpNYZPS851OrrynsKIKNDyRX7KcLD5uT6xXWr/ufVZoZtmkvXa7tpVHPjZ1SQ9F368vkwlQgsj9pvaURzD/"
+compilation:
+  reuse_compilation_vms: true
+  workers: 2
+  network: default
+  cloud_properties:
+    ram: 1024
+    disk: 4096
+    cpu: 2
+update:
+  canaries: 1
+  canary_watch_time: 30000-300000
+  update_watch_time: 30000-300000
+  max_in_flight: 1
+  max_errors: 2
+  serial: true
+jobs:
+- name: cf-redis-broker-partition-a24ba4e9a226f8bd1d83
+  templates:
+  - name: cf-redis-broker
+    release: cf-redis
+  - name: syslog-configurator
+    release: cf-redis
+  lifecycle: service
+  instances: 1
+  resource_pool: cf-redis-broker-partition-a24ba4e9a226f8bd1d83
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - 10.65.170.161
+  properties:
+    cf:
+      apps_domain: cf.haas-02.pez.pivotal.io
+      nats:
+        host: 10.65.170.102
+        port: 4222
+        username: nats
+        password: b7c45cae22020bcf144f
+    redis:
+      host: 10.65.170.161
+      config_command: d44d70125c27e0011903
+      save_command: a8e252c00ac6df021c20
+      bg_save_command: bc2239f64ac98b8f5dbc
+      broker:
+        network: default
+        dedicated_nodes:
+        - 10.65.170.162
+        - 10.65.170.163
+        - 10.65.170.164
+        - 10.65.170.165
+        - 10.65.170.166
+        service_instance_limit: 5
+        auth:
+          username: admin
+          password: daf7a6240121c68b87bc
+      maxmemory: 512MB
+    syslog_aggregator:
+      address: 
+      port: 
+    networks:
+      broker: default
+  update:
+    max_in_flight: 1
+  persistent_disk_pool: cf-redis-broker-partition-a24ba4e9a226f8bd1d83
+- name: dedicated-node-partition-a24ba4e9a226f8bd1d83
+  templates:
+  - name: dedicated-node
+    release: cf-redis
+  - name: syslog-configurator
+    release: cf-redis
+  lifecycle: service
+  instances: 5
+  resource_pool: dedicated-node-partition-a24ba4e9a226f8bd1d83
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - 10.65.170.162
+    - 10.65.170.163
+    - 10.65.170.164
+    - 10.65.170.165
+    - 10.65.170.166
+  properties:
+    syslog_aggregator:
+      address: 
+      port: 
+    redis:
+      config_command: d44d70125c27e0011903
+      broker:
+        backend_host: 10.65.170.161
+        auth:
+          username: admin
+          password: daf7a6240121c68b87bc
+  update:
+    max_in_flight: 5
+  persistent_disk_pool: dedicated-node-partition-a24ba4e9a226f8bd1d83
+- name: broker-registrar
+  templates:
+  - name: broker-registrar
+    release: cf-redis
+  lifecycle: errand
+  instances: 1
+  resource_pool: broker-registrar
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+  properties:
+    broker:
+      name: p-redis
+      host: redis-broker.cf.haas-02.pez.pivotal.io
+      username: admin
+      password: daf7a6240121c68b87bc
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      admin_username: admin
+      admin_password: b76b870cddde4ec32159
+  update:
+    max_in_flight: 1
+- name: broker-deregistrar
+  templates:
+  - name: broker-deregistrar
+    release: cf-redis
+  lifecycle: errand
+  instances: 1
+  resource_pool: broker-deregistrar
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+  properties:
+    broker:
+      name: p-redis
+      host: redis-broker.cf.haas-02.pez.pivotal.io
+      username: admin
+      password: daf7a6240121c68b87bc
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      admin_username: admin
+      admin_password: b76b870cddde4ec32159
+  update:
+    max_in_flight: 1
+disk_pools:
+- name: cf-redis-broker-partition-a24ba4e9a226f8bd1d83
+  disk_size: 1024
+- name: dedicated-node-partition-a24ba4e9a226f8bd1d83
+  disk_size: 4096

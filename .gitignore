@@ -8,3 +8,7 @@
 /spec/reports/
 /tmp/
 .idea
+cf-photon.yml
+mysql-photon.yml
+rabbit-photon.yml
+redis-photon.yml

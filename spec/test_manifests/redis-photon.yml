@@ -1,0 +1,226 @@
+---
+name: redis-photon
+director_uuid: ignore
+releases:
+- name: cf-redis
+  version: '346.3'
+networks:
+- name: default
+  subnets:
+  - range: 10.65.172.0/23
+    gateway: 10.65.172.1
+    dns:
+    - 10.65.162.2
+    static:
+    - 10.65.172.161
+    - 10.65.172.162
+    - 10.65.172.163
+    - 10.65.172.164
+    - 10.65.172.165
+    - 10.65.172.166
+    reserved:
+    - 10.65.172.2-10.65.172.160
+    - 10.65.172.177-10.65.173.254
+    cloud_properties:
+      name: Photon_PCF
+resource_pools:
+- name: cf-redis-broker-partition
+  stemcell:
+    name: bosh-esxcloud-esxi-ubuntu-trusty-go_agent
+    version: '0000'
+  network: default
+  cloud_properties:
+    vm_flavor: core-200
+    disk_flavor: core-200
+  env:
+    bosh:
+      password: admin
+- name: dedicated-node-partition
+  stemcell:
+    name: bosh-esxcloud-esxi-ubuntu-trusty-go_agent
+    version: '0000'
+  network: default
+  cloud_properties:
+    vm_flavor: core-200
+    disk_flavor: core-200
+  env:
+    bosh:
+      password: admin
+- name: broker-registrar
+  stemcell:
+    name: bosh-esxcloud-esxi-ubuntu-trusty-go_agent
+    version: '0000'
+  network: default
+  cloud_properties:
+    vm_flavor: core-200
+    disk_flavor: core-200
+  env:
+    bosh:
+      password: admin
+- name: broker-deregistrar
+  stemcell:
+    name: bosh-esxcloud-esxi-ubuntu-trusty-go_agent
+    version: '0000'
+  network: default
+  cloud_properties:
+    vm_flavor: core-200
+    disk_flavor: core-200
+  env:
+    bosh:
+      password: admin
+compilation:
+  reuse_compilation_vms: true
+  workers: 2
+  network: default
+  cloud_properties:
+    vm_flavor: core-200
+    disk_flavor: core-200
+update:
+  canaries: 1
+  canary_watch_time: 30000-300000
+  update_watch_time: 30000-300000
+  max_in_flight: 1
+  max_errors: 2
+  serial: true
+jobs:
+- name: cf-redis-broker-partition
+  templates:
+  - name: cf-redis-broker
+    release: cf-redis
+  - name: syslog-configurator
+    release: cf-redis
+  lifecycle: service
+  instances: 1
+  resource_pool: cf-redis-broker-partition
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - 10.65.172.161
+  properties:
+    cf:
+      apps_domain: cf.haas-04.pez.pivotal.io
+      nats:
+        host: 10.65.172.102
+        port: 4222
+        username: admin
+        password: admin
+    redis:
+      host: 10.65.172.161
+      config_command: admin
+      save_command: admin
+      bg_save_command: admin
+      broker:
+        network: default
+        dedicated_nodes:
+        - 10.65.172.162
+        - 10.65.172.163
+        - 10.65.172.164
+        - 10.65.172.165
+        - 10.65.172.166
+        service_instance_limit: 5
+        auth:
+          username: admin
+          password: admin
+      maxmemory: 512MB
+    syslog_aggregator:
+      address:
+      port:
+    networks:
+      broker: default
+  update:
+    max_in_flight: 1
+  persistent_disk_pool: cf-redis-broker-partition
+- name: dedicated-node-partition
+  templates:
+  - name: dedicated-node
+    release: cf-redis
+  - name: syslog-configurator
+    release: cf-redis
+  lifecycle: service
+  instances: 5
+  resource_pool: dedicated-node-partition
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - 10.65.172.162
+    - 10.65.172.163
+    - 10.65.172.164
+    - 10.65.172.165
+    - 10.65.172.166
+  properties:
+    syslog_aggregator:
+      address:
+      port:
+    redis:
+      config_command: admin
+      broker:
+        backend_host: 10.65.172.161
+        auth:
+          username: admin
+          password: admin
+  update:
+    max_in_flight: 5
+  persistent_disk_pool: dedicated-node-partition
+- name: broker-registrar
+  templates:
+  - name: broker-registrar
+    release: cf-redis
+  lifecycle: errand
+  instances: 1
+  resource_pool: broker-registrar
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+  properties:
+    broker:
+      name: p-redis
+      host: redis-broker.cf.haas-04.pez.pivotal.io
+      username: admin
+      password: admin
+    cf:
+      api_url: https://api.cf.haas-04.pez.pivotal.io
+      admin_username: admin
+      admin_password: admin
+  update:
+    max_in_flight: 1
+- name: broker-deregistrar
+  templates:
+  - name: broker-deregistrar
+    release: cf-redis
+  lifecycle: errand
+  instances: 1
+  resource_pool: broker-deregistrar
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+  properties:
+    broker:
+      name: p-redis
+      host: redis-broker.cf.haas-04.pez.pivotal.io
+      username: admin
+      password: admin
+    cf:
+      api_url: https://api.cf.haas-04.pez.pivotal.io
+      admin_username: admin
+      admin_password: admin
+  update:
+    max_in_flight: 1
+disk_pools:
+- name: cf-redis-broker-partition
+  disk_size: 10_240
+  cloud_properties:
+    disk_flavor: core-200
+- name: dedicated-node-partition
+  disk_size: 10_240
+  cloud_properties:
+    disk_flavor: core-200

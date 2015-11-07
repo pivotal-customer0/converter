@@ -1,0 +1,308 @@
+---
+name: p-rabbitmq-1a98269c523dd6a1bd64
+director_uuid: ignore
+releases:
+- name: cf-rabbitmq
+  version: '161'
+networks:
+- name: default
+  subnets:
+  - range: 10.65.170.0/23
+    gateway: 10.65.170.1
+    dns:
+    - 10.65.162.2
+    static:
+    - 10.65.170.177
+    - 10.65.170.178
+    - 10.65.170.179
+    - 10.65.170.180
+    reserved:
+    - 10.65.170.2-10.65.170.176
+    - 10.65.170.189-10.65.171.254
+    cloud_properties:
+      name: Photon_PCF
+resource_pools:
+- name: rabbitmq-server-partition-a24ba4e9a226f8bd1d83
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 8192
+    disk: 4096
+    cpu: 2
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$e58224ce56ec7a75$MMMxDVL/K8Sum8QftqQSnKGjhe0M10OD83u161eogGJca6W1riIOmVYTP6YNQAhzeJ0KfjMbChAiJmtpq21461"
+- name: rabbitmq-haproxy-partition-a24ba4e9a226f8bd1d83
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 2048
+    disk: 4096
+    cpu: 1
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$47fd38198884fa00$JWx1I37iZwl4/KKNbno6aFZD.qmWNFNZrEh2ErwczUVNz8xt8ZDw6484YlAsNuqMUQTTsdva2bXQDP22z7te30"
+- name: rabbitmq-broker-partition-a24ba4e9a226f8bd1d83
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 2048
+    disk: 4096
+    cpu: 1
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$ece8458e6a2e3842$baFNGX0eJ53iG3ef6eTOlqRUcWN3cwxVeMciR1i16wcJ2HppplB7inZeGEtGQCp18VK8ShW4k7c.l5nOoTcuR0"
+- name: broker-registrar
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 1024
+    disk: 2048
+    cpu: 1
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$bd3ab995f30d3518$bmF2wndqEsTp8s0ri0iAhc.6WOcmp7OPAzGmPewnN3OmX5FFlo1iQzGAk/97Ua0FnO2/tL5cgyDEvcSgPv7jD."
+- name: broker-deregistrar
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    version: '3094'
+  network: default
+  cloud_properties:
+    ram: 1024
+    disk: 2048
+    cpu: 1
+    datacenters:
+    - clusters:
+      - Cluster-Mgmt:
+          resource_pool: AZ01
+  env:
+    bosh:
+      password: "$6$341adb1e4ad43781$omP8R3aNhHBbEjUli5qS/pdLIVvpowhwE3Cjx19im3KHji809y1RhFu4XqYMBiywQ1gX3IDqcvJ3FagyNiJjh0"
+compilation:
+  reuse_compilation_vms: true
+  workers: 2
+  network: default
+  cloud_properties:
+    ram: 2048
+    disk: 4096
+    cpu: 2
+update:
+  canaries: 1
+  canary_watch_time: 30000-300000
+  update_watch_time: 30000-300000
+  max_in_flight: 1
+  max_errors: 2
+  serial: true
+jobs:
+- name: rabbitmq-server-partition-a24ba4e9a226f8bd1d83
+  templates:
+  - name: rabbitmq-server
+    release: cf-rabbitmq
+  lifecycle: service
+  instances: 2
+  resource_pool: rabbitmq-server-partition-a24ba4e9a226f8bd1d83
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - 10.65.170.177
+    - 10.65.170.178
+  properties:
+    syslog_aggregator:
+      address: 
+      port: 
+    rabbitmq-server:
+      networks:
+        apps: default
+      static_ips:
+      - 10.65.170.177
+      - 10.65.170.178
+      administrators:
+        management:
+          username: rabbitadmin
+          password: rabbitadmin
+        broker:
+          username: broker
+          password: 861a33b643254ebb
+      plugins:
+      - rabbitmq_management
+      ssl:
+        security_options:
+        - enable_tls1_0
+        key: 
+        cert: 
+        cacert: 
+      config: 
+      cookie: 
+  update:
+    max_in_flight: 2
+    serial: false
+  persistent_disk_pool: rabbitmq-server-partition-a24ba4e9a226f8bd1d83
+- name: rabbitmq-haproxy-partition-a24ba4e9a226f8bd1d83
+  templates:
+  - name: rabbitmq-haproxy
+    release: cf-rabbitmq
+  lifecycle: service
+  instances: 1
+  resource_pool: rabbitmq-haproxy-partition-a24ba4e9a226f8bd1d83
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - 10.65.170.179
+  properties:
+    rabbitmq-haproxy:
+      stats:
+        username: admin
+        password: 5faf183b76f3260c
+      networks:
+        apps: default
+      server_ips:
+      - 10.65.170.177
+      - 10.65.170.178
+      ports: 15672, 5672, 5671, 1883, 8883, 61613, 61614, 15674
+  update:
+    max_in_flight: 1
+    serial: false
+- name: rabbitmq-broker-partition-a24ba4e9a226f8bd1d83
+  templates:
+  - name: rabbitmq-broker
+    release: cf-rabbitmq
+  lifecycle: service
+  instances: 1
+  resource_pool: rabbitmq-broker-partition-a24ba4e9a226f8bd1d83
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - 10.65.170.180
+  properties:
+    rabbitmq-broker:
+      networks:
+        apps: default
+      cc_endpoint: https://api.cf.haas-02.pez.pivotal.io
+      cc_api_version: v2
+      uaa_endpoint: https://uaa.cf.haas-02.pez.pivotal.io
+      uaa_client:
+        client_id: cf
+        username: system_services
+        password: d24a6a13ac10dcea3dc3
+      rabbitmq:
+        operator_set_policy:
+          enabled: true
+          policy_name: operator_set_policy
+          policy_definition: |
+            {"ha-mode": "exactly", "ha-params": 2, "ha-sync-mode": "automatic"}
+          policy_priority: 50
+        management_domain: pivotal-rabbitmq.cf.haas-02.pez.pivotal.io
+        hosts:
+        - 10.65.170.179
+        dns_host: 
+        administrator:
+          username: broker
+          password: 861a33b643254ebb
+        ssl: 
+      service:
+        url: 10.65.170.180
+        username: admin
+        password: f2296f47629c6831d731
+      logging:
+        level: info
+        print_stack_traces: true
+    cf:
+      domain: cf.haas-02.pez.pivotal.io
+      nats:
+        host: 10.65.170.102
+        port: 4222
+        username: nats
+        password: b7c45cae22020bcf144f
+    route-registrar:
+      target_ip: 10.65.170.179
+  update:
+    max_in_flight: 1
+    serial: false
+- name: broker-registrar
+  templates:
+  - name: broker-registrar
+    release: cf-rabbitmq
+  lifecycle: errand
+  instances: 1
+  resource_pool: broker-registrar
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+  properties:
+    broker:
+      name: p-rabbitmq
+      protocol: http
+      host: 10.65.170.180
+      port: 4567
+      username: admin
+      password: f2296f47629c6831d731
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      admin_username: system_services
+      admin_password: d24a6a13ac10dcea3dc3
+  update:
+    max_in_flight: 1
+- name: broker-deregistrar
+  templates:
+  - name: broker-deregistrar
+    release: cf-rabbitmq
+  lifecycle: errand
+  instances: 1
+  resource_pool: broker-deregistrar
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+  properties:
+    broker:
+      name: p-rabbitmq
+      protocol: http
+      host: 10.65.170.180
+      port: 4567
+      username: admin
+      password: f2296f47629c6831d731
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      admin_username: system_services
+      admin_password: d24a6a13ac10dcea3dc3
+  update:
+    max_in_flight: 1
+disk_pools:
+- name: rabbitmq-server-partition-a24ba4e9a226f8bd1d83
+  disk_size: 8192

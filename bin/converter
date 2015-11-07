@@ -1,7 +1,7 @@
 #!env ruby
 require 'yaml'
 require 'optparse'
-require 'converter'
+require 'converter/flavor_maker'
 
 options = {}
 options[:password] = 'admin'
@@ -170,63 +170,51 @@ end
 ###############################################################################
 # script starts here
 ###############################################################################
-if File.identical?( __FILE__, $0)
-  node = YAML.load_file options[:manifest]
+node = YAML.load_file options[:manifest]
 
-  FlavorMaker.convert_vsphere_cloud_props_to_photon node['resource_pools']
-  # node['resource_pools'].each do |v|
-  #   v['cloud_properties'] = { 'vm_flavor' => 'core-200', 'disk_flavor' =>'core-200'}
-  # end
 
-  FlavorMaker.convert_vsphere_cloud_props_to_photon node['compilation']
-  # node['compilation']['cloud_properties'] = {
-  #     'vm_flavor' => 'core-200',
-  #     'disk_flavor' =>'core-200'
-  # }
-
-  FlavorMaker.convert_vsphere_disk_pool_to_photon node['disk_pools']
-  # node['disk_pools'].each_with_index do |v, index|
-  #   node['disk_pools'][index] = {
-  #       'name' => v['name'],
-  #       'disk_size' => 10240,
-  #       'cloud_properties' =>{
-  #         'disk_flavor' =>'core-200',
-  #       }
-  #   }
-  # end
-
-  node['name'] = "#{name}-photon"
-
-  # find uaa
-  if 'cf' == name
-    idx=0
-    node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? "uaa-partition" end
-    cf_password=node['jobs'][idx]['properties']['uaa']['scim']['users'][0].split('|')[1]
-    change_value_sub_strings(node, cf_password, options[:password])
-  end
-
-  add_cf_password_to_errands(node, options[:password])
-
-  unless options[:domains].nil?
-    change_value_sub_strings(node, options[:domains].old, options[:domains].new)
-  end
-
-  unless options[:ip_ranges].nil?
-    options[:ip_ranges].each do |range|
-      change_value_sub_strings(node, range.old, range.new)
-      change_ips(node, range.old, range.new)
-    end
-  end
-
-  unless options[:dns].nil?
-    node['networks'][0]['subnets'][0]['dns'] = [ options[:dns] ]
-  end
-
-  if options[:sanitize_partition]
-    sanitize_partition(node)
-  end
-
-  #TODO We don't let anyone change the stemcell yet became we only have the one.
-  swap_stemcells node
-  File.open(options[:output_path], 'w') { |f| YAML.dump(node, f) }
+node['resource_pools'].each do |v|
+  FlavorMaker.convert_vsphere_cloud_props_to_photon v
 end
+
+FlavorMaker.convert_vsphere_cloud_props_to_photon node['compilation']
+
+node['disk_pools'].each_with_index do |v|
+  FlavorMaker.convert_vsphere_disk_pool_to_photon v
+end
+
+node['name'] = "#{name}-photon"
+
+# find uaa
+if 'cf' == name
+  idx=0
+  node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? "uaa-partition" end
+  cf_password=node['jobs'][idx]['properties']['uaa']['scim']['users'][0].split('|')[1]
+  change_value_sub_strings(node, cf_password, options[:password])
+end
+
+add_cf_password_to_errands(node, options[:password])
+
+unless options[:domains].nil?
+  change_value_sub_strings(node, options[:domains].old, options[:domains].new)
+end
+
+unless options[:ip_ranges].nil?
+  options[:ip_ranges].each do |range|
+    change_value_sub_strings(node, range.old, range.new)
+    change_ips(node, range.old, range.new)
+  end
+end
+
+unless options[:dns].nil?
+  node['networks'][0]['subnets'][0]['dns'] = [ options[:dns] ]
+end
+
+if options[:sanitize_partition]
+  sanitize_partition(node)
+end
+
+#TODO We don't let anyone change the stemcell yet became we only have the one.
+swap_stemcells node
+File.open(options[:output_path], 'w') { |f| YAML.dump(node, f) }
+
