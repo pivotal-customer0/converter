@@ -1,5 +1,5 @@
 
-class PasswordChanger
+class Authentication
   def self.set_admin_password(yaml, password)
     if yaml.respond_to?(:key?) && yaml.key?('scim')
       admin_user = yaml['scim']['users'][0]

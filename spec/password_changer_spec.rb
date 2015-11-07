@@ -1,5 +1,5 @@
 require 'rspec'
-require 'converter/password_changer'
+require 'converter/authentication'
 
 describe 'changes the cf admin password' do
   yml = nil
@@ -29,12 +29,12 @@ END
 
   context 'uaa' do
     it 'should get the cf admin password' do
-      password = PasswordChanger.get_cf_admin_password yml
+      password = Authentication.get_cf_admin_password yml
       expect(password).to eql 'b76b870cddde4ec32159'
     end
 
     it 'should set the uaa password' do
-      PasswordChanger.set_admin_password yml, 'new-password'
+      Authentication.set_admin_password yml, 'new-password'
       admin = yml['jobs'][0]['properties']['uaa']['scim']['users'][0]
       password = admin.split('|')[1]
       expect(password).to eql('new-password')

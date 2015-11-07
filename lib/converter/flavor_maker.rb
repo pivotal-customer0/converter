@@ -50,12 +50,18 @@ class FlavorMaker
   end
 
   def self.convert_vsphere_disk_pool_to_photon(yaml)
-    if yaml.respond_to?(:key?) && yaml.key?('disk_size')
-      disk = yaml['disk_size']
+    self.find(yaml, 'disk_size') do |y|
+      disk = y['disk_size']
       disk_flavor = self.get_best_fitting_photon_disk_flavor(disk)
-      yaml['cloud_properties']={ 'disk_flavor' => disk_flavor}
+      y['cloud_properties']={ 'disk_flavor' => disk_flavor}
+    end
+  end
+
+  def self.find(yaml, key, &block)
+    if yaml.respond_to?(:key?) && yaml.key?(key)
+      block.call(yaml)
     elsif yaml.respond_to?(:each)
-      yaml.find{ |*a| self.convert_vsphere_disk_pool_to_photon(a.last) }
+      yaml.find { |*a| self.find(a.last, key, &block)}
     end
   end
 end
