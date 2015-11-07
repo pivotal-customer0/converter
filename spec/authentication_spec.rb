@@ -2,7 +2,7 @@ require 'rspec'
 require 'converter/authentication'
 
 describe 'changes the cf admin password' do
-  yml = nil
+  yaml = nil
   manifest = <<END
 ---
 jobs:
@@ -24,20 +24,26 @@ jobs:
 
 END
   before do
-    yml = YAML.load manifest
+    yaml = YAML.load manifest
   end
 
   context 'uaa' do
     it 'should get the cf admin password' do
-      password = Authentication.get_cf_admin_password yml
+      password = Authentication.get_cf_admin_password yaml
       expect(password).to eql 'b76b870cddde4ec32159'
     end
 
     it 'should set the uaa password' do
-      Authentication.set_admin_password yml, 'new-password'
-      admin = yml['jobs'][0]['properties']['uaa']['scim']['users'][0]
+      Authentication.set_admin_password yaml, 'new-password'
+      admin = yaml['jobs'][0]['properties']['uaa']['scim']['users'][0]
       password = admin.split('|')[1]
       expect(password).to eql('new-password')
+    end
+
+    it 'should set dependent jobs with passwords' do
+      Authentication.set_admin_password yaml, 'funky-town'
+      notifications_admin_password = yaml['jobs'][1]['properties']['notifications']['cf']['admin_password']
+      expect(notifications_admin_password).to eq('funky-town')
     end
   end
 end

@@ -2,6 +2,7 @@
 require 'yaml'
 require 'optparse'
 require 'converter/flavor_maker'
+require 'converter/yaml_helper'
 
 options = {}
 options[:password] = 'admin'
@@ -97,26 +98,6 @@ def swap_stemcells(yaml)
   end
 end
 
-def change_value_sub_strings(yaml, from, to)
-  yaml.each do |key, value|
-    if value.is_a? Hash
-      change_value_sub_strings(yaml[key], from, to)
-    elsif key.is_a? Hash
-      change_value_sub_strings(key, from, to)
-    elsif value.is_a? Array
-      value.each_with_index do | v,i |
-        if v.is_a? Hash
-          change_value_sub_strings(yaml[key], from, to)
-        elsif v.is_a? String
-          yaml[key][i] = v.gsub(from,to)
-        end
-      end
-    elsif value.is_a? String
-      yaml[key] = value.gsub(from, to)
-    end
-  end
-end
-
 def change_ips(yaml, from, to)
   yaml.each do |key,value|
     if value.is_a? Array
@@ -136,7 +117,7 @@ def sanitize_partition(yaml)
   yaml.each do |key, value|
     if 'name' == key and value.match /partition-\w+/
       new_value = value.sub(/partition.*/, 'partition')
-      change_value_sub_strings(yaml, value, new_value)
+      YAMLHelper.change_value_sub_strings(yaml, value, new_value)
       yaml[key] = new_value
     end
     if value.is_a? Array
@@ -190,18 +171,18 @@ if 'cf' == name
   idx=0
   node['jobs'].each_with_index do |v, i| idx=i if v['name'].include? 'uaa-partition' end
   cf_password=node['jobs'][idx]['properties']['uaa']['scim']['users'][0].split('|')[1]
-  change_value_sub_strings(node, cf_password, options[:password])
+  YAMLHelper.change_value_sub_strings(node, cf_password, options[:password])
 end
 
 add_cf_password_to_errands(node, options[:password])
 
 unless options[:domains].nil?
-  change_value_sub_strings(node, options[:domains].old, options[:domains].new)
+  YAMLHelper.change_value_sub_strings(node, options[:domains].old, options[:domains].new)
 end
 
 unless options[:ip_ranges].nil?
   options[:ip_ranges].each do |range|
-    change_value_sub_strings(node, range.old, range.new)
+    YAMLHelper.change_value_sub_strings(node, range.old, range.new)
     change_ips(node, range.old, range.new)
   end
 end

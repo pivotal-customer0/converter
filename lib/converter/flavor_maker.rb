@@ -37,23 +37,22 @@ class FlavorMaker
   end
 
   def self.convert_vsphere_cloud_props_to_photon(yaml)
-    if yaml.respond_to?(:key?) && yaml.key?('cloud_properties')
-      ram = yaml['cloud_properties']['ram']
-      cpu = yaml['cloud_properties']['cpu']
-      disk = yaml['cloud_properties']['disk']
+    #find a cloud properties inside a resource pool.
+    self.find(yaml, 'cloud_properties') do |resource_pool|
+      ram = resource_pool['cloud_properties']['ram']
+      cpu = resource_pool['cloud_properties']['cpu']
+      disk = resource_pool['cloud_properties']['disk']
       vm_flavor = self.get_best_fitting_photon_vm_flavor(ram, cpu)
       disk_flavor = self.get_best_fitting_photon_disk_flavor(disk)
-      yaml['cloud_properties']={ 'vm_flavor' => vm_flavor, 'disk_flavor' => disk_flavor}
-    elsif yaml.respond_to?(:each)
-      yaml.find{ |*a| self.convert_vsphere_cloud_props_to_photon(a.last) }
+      resource_pool['cloud_properties']={ 'vm_flavor' => vm_flavor, 'disk_flavor' => disk_flavor}
     end
   end
 
   def self.convert_vsphere_disk_pool_to_photon(yaml)
-    self.find(yaml, 'disk_size') do |y|
-      disk = y['disk_size']
+    self.find(yaml, 'disk_size') do |disk_pool|
+      disk = disk_pool['disk_size']
       disk_flavor = self.get_best_fitting_photon_disk_flavor(disk)
-      y['cloud_properties']={ 'disk_flavor' => disk_flavor}
+      disk_pool['cloud_properties']={ 'disk_flavor' => disk_flavor}
     end
   end
 
