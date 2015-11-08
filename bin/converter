@@ -5,6 +5,7 @@ require 'converter/flavor_maker'
 require 'converter/yaml_helper'
 require 'converter/authentication'
 require 'converter/cf_domain'
+require 'converter/cf_network'
 
 options = {}
 options[:password] = 'admin'
@@ -169,7 +170,7 @@ unless options[:ip_ranges].nil?
 end
 
 unless options[:dns].nil?
-  node['networks'][0]['subnets'][0]['dns'] = [ options[:dns] ]
+   CFNetwork.set_dns node, options[:dns]
 end
 
 if options[:sanitize_partition]
