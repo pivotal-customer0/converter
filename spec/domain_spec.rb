@@ -4,7 +4,10 @@ require 'converter/domain'
 describe Domain do
   describe 'Domain manipulation' do
     yaml = nil
-    manifest = <<-END
+    new_domain = 'new.domain.example.com'
+
+    context 'in the cf manifest' do
+      manifest = <<-END
 ---
 jobs:
 - name: cloud_controller-partition-a24ba4e9a226f8bd1d83
@@ -21,19 +24,17 @@ jobs:
         port: 9022
         uris:
         - api.cf.haas-02.pez.pivotal.io
-END
-
-    context 'in the cf manifest' do
+      END
 
       before do
         yaml = YAML.load manifest
       end
+
       it 'should get the current domain' do
         expect(Domain.get_domain yaml).to eql 'cf.haas-02.pez.pivotal.io'
       end
 
       context 'when changing domains' do
-        new_domain = 'new.domain.example.com'
 
         before do
           Domain.change_domain yaml, new_domain
@@ -54,6 +55,53 @@ END
         end
       end
 
+    end
+
+    context 'in a redis manifest' do
+      yaml = nil
+      manifest=<<-END
+---
+jobs:
+- name: broker-registrar
+  properties:
+    broker:
+      host: redis-broker.cf.haas-02.pez.pivotal.io
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+- name: broker-deregistrar
+  properties:
+    broker:
+      host: redis-broker.cf.haas-02.pez.pivotal.io
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      END
+
+      before do
+        yaml = YAML.load manifest
+      end
+
+      it 'should_get_the_current_domain' do
+        expect(Domain.get_domain yaml).to eql('cf.haas-02.pez.pivotal.io')
+      end
+
+      context 'when changing domains' do
+
+        before do
+          Domain.change_domain yaml, new_domain
+        end
+
+        it 'should change the api endpoints' do
+          api_endpoint = yaml['jobs'][0]['properties']['cf']['api_url']
+          api_endpoint = yaml['jobs'][1]['properties']['cf']['api_url']
+          expect(api_endpoint).to eql "https://api.#{new_domain}"
+        end
+
+        it 'should change the broker endpoints' do
+          api_endpoint = yaml['jobs'][0]['properties']['broker']['host']
+          api_endpoint = yaml['jobs'][1]['properties']['broker']['host']
+          expect(api_endpoint).to eql "redis-broker.#{new_domain}"
+        end
+      end
     end
   end
 end

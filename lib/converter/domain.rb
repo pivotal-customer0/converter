@@ -2,7 +2,12 @@ require 'converter/yaml_helper'
 class Domain
   def self.get_domain(yaml)
     cc = get_cloud_controller_job yaml
-    return cc['properties']['domain']
+    unless cc.nil?
+      return cc['properties']['domain']
+    end
+    YAMLHelper.find yaml, 'api_url' do |api_url|
+      return api_url['api_url'].gsub 'https://api.', ''
+    end
   end
 
   def self.change_domain(yaml, new_domain)
@@ -15,5 +20,6 @@ class Domain
         return job
       end
     end
+    return nil
   end
 end

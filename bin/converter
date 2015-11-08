@@ -4,6 +4,7 @@ require 'optparse'
 require 'converter/flavor_maker'
 require 'converter/yaml_helper'
 require 'converter/authentication'
+require 'converter/domain'
 
 options = {}
 options[:password] = 'admin'
@@ -152,13 +153,13 @@ end
 node['name'] = "#{name}-photon"
 
 if 'cf' == name
-  Authentication.set_cf_admin_password yaml, options[:password]
+  Authentication.set_cf_admin_password node, options[:password]
 else
   Authentication.set_cf_admin_password_for_errands(node, options[:password])
 end
 
 unless options[:domains].nil?
-  YAMLHelper.change_value_sub_strings(node, options[:domains].old, options[:domains].new)
+  Domain.change_domain node, options[:domains].new
 end
 
 unless options[:ip_ranges].nil?
