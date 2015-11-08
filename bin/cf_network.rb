@@ -1,0 +1,2 @@
+class CFNetwork
+end

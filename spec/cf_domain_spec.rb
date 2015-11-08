@@ -1,7 +1,7 @@
 require 'rspec'
-require 'converter/domain'
+require 'converter/cf_domain'
 
-describe Domain do
+describe CFDomain do
   describe 'Domain manipulation' do
     yaml = nil
     new_domain = 'new.domain.example.com'
@@ -41,17 +41,17 @@ jobs:
       end
 
       it 'should get the current domain' do
-        expect(Domain.get_domain yaml).to eql 'cf.haas-02.pez.pivotal.io'
+        expect(CFDomain.get_domain yaml).to eql 'cf.haas-02.pez.pivotal.io'
       end
 
       context 'when changing domains' do
 
         before do
-          Domain.change_domain yaml, new_domain
+          CFDomain.change_domain yaml, new_domain
         end
 
         it 'should change the current domain' do
-          expect(Domain.get_domain yaml).to eql new_domain
+          expect(CFDomain.get_domain yaml).to eql new_domain
         end
 
         it 'should change the system domain' do
@@ -96,13 +96,13 @@ jobs:
       end
 
       it 'should_get_the_current_domain' do
-        expect(Domain.get_domain yaml).to eql('cf.haas-02.pez.pivotal.io')
+        expect(CFDomain.get_domain yaml).to eql('cf.haas-02.pez.pivotal.io')
       end
 
       context 'when changing domains' do
 
         before do
-          Domain.change_domain yaml, new_domain
+          CFDomain.change_domain yaml, new_domain
         end
 
         it 'should change the api endpoints' do

@@ -1,5 +1,5 @@
 require 'converter/yaml_helper'
-class Domain
+class CFDomain
   def self.get_domain(yaml)
     cc = get_cloud_controller_job yaml
     unless cc.nil?

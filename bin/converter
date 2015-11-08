@@ -4,7 +4,7 @@ require 'optparse'
 require 'converter/flavor_maker'
 require 'converter/yaml_helper'
 require 'converter/authentication'
-require 'converter/domain'
+require 'converter/cf_domain'
 
 options = {}
 options[:password] = 'admin'
@@ -158,7 +158,7 @@ else
 end
 
 unless options[:domain].nil?
-  Domain.change_domain node, options[:domain]
+  CFDomain.change_domain node, options[:domain]
 end
 
 unless options[:ip_ranges].nil?
