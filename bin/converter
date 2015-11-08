@@ -31,11 +31,10 @@ opts = OptionParser.new do |opts|
     options[:password] = v
   end
 
-  opts.on('--swap-domain OLD_DOMAIN:NEW_DOMAIN',
-          'Replaces domain on the left with domain on the right',
-          'e.g. --swap-domain haas-02.pez.pivotal.io:haas-04.pez.pivotal.io',
+  opts.on('--domain NEW_DOMAIN',
+          'Replaces domains in the manifest with the new domain',
           'take heed, this is a simple string replace, adding "https://" is probably wrong') do |v|
-    options[:domains] = ReplacementPair.new(v)
+    options[:domain] = v
   end
 
   opts.on('--swap-ip-ranges OLD_RANGE1:NEW_RANGE1,OLD_RANGE2:NEW_RANGE2',
@@ -158,8 +157,8 @@ else
   Authentication.set_cf_admin_password_for_errands(node, options[:password])
 end
 
-unless options[:domains].nil?
-  Domain.change_domain node, options[:domains].new
+unless options[:domain].nil?
+  Domain.change_domain node, options[:domain]
 end
 
 unless options[:ip_ranges].nil?

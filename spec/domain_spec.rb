@@ -24,6 +24,16 @@ jobs:
         port: 9022
         uris:
         - api.cf.haas-02.pez.pivotal.io
+- name: push-apps-manager
+  properties:
+    cf:
+      api_url: https://api.cf.haas-02.pez.pivotal.io
+      system_domain: cf.haas-02.pez.pivotal.io
+    services:
+      authentication:
+        CF_LOGIN_SERVER_URL: https://login.cf.haas-02.pez.pivotal.io
+        CF_UAA_SERVER_URL: https://uaa.cf.haas-02.pez.pivotal.io
+
       END
 
       before do
@@ -52,6 +62,11 @@ jobs:
         it 'should change the api endpoint' do
           api_endpoint = yaml['jobs'][0]['properties']['route_registrar']['routes'][0]['uris'][0]
           expect(api_endpoint).to eql "api.#{new_domain}"
+        end
+
+        it 'should change the uaa login url' do
+          login_endpoint = yaml['jobs'][1]['properties']['services']['authentication']['CF_LOGIN_SERVER_URL']
+          expect(login_endpoint).to eql "https://login.#{new_domain}"
         end
       end
 
