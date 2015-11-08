@@ -6,19 +6,11 @@ require 'converter/yaml_helper'
 require 'converter/authentication'
 require 'converter/cf_domain'
 require 'converter/cf_network'
+require 'converter/replacement_pair'
 
 options = {}
 options[:password] = 'admin'
 options[:ip_ranges] = []
-
-class ReplacementPair
-  #Expects arg to be in the format of old:new
-  def initialize(arg)
-    @old, @new = arg.split(':')
-  end
-
-  attr_accessor :old, :new
-end
 
 
 opts = OptionParser.new do |opts|
@@ -45,7 +37,8 @@ opts = OptionParser.new do |opts|
             "\t--swap-ip-ranges 10.65.170:10.65.172,10.65.171:10.65.173",
           'take heed, this is a simple string replace') do |v|
     v.split(',').each do |range|
-      options[:ip_ranges].push(ReplacementPair.new(range))
+      o = range.split(':')
+      options[:ip_ranges].push(ReplacementPair.new(o[0], o[1]))
     end
   end
 
@@ -100,21 +93,6 @@ def swap_stemcells(yaml)
   end
 end
 
-def change_ips(yaml, from, to)
-  yaml.each do |key,value|
-    if value.is_a? Array
-      value.each_with_index  do |v, idx|
-        change_ips(v, from, to) if v.is_a? Hash
-        if v.is_a? String and v.include? from
-            yaml[key][idx] = v.gsub(from, to)
-        end
-      end
-    elsif value.is_a? Hash
-      change_ips(value, from, to)
-    end
-  end
-end
-
 def sanitize_partition(yaml)
   yaml.each do |key, value|
     if 'name' == key and value.match /partition-\w+/
@@ -163,10 +141,7 @@ unless options[:domain].nil?
 end
 
 unless options[:ip_ranges].nil?
-  options[:ip_ranges].each do |range|
-    YAMLHelper.change_value_sub_strings(node, range.old, range.new)
-    change_ips(node, range.old, range.new)
-  end
+  CFNetwork.replace_ip_ranges node, options[:ip_ranges]
 end
 
 unless options[:dns].nil?
