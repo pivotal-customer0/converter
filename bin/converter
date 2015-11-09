@@ -15,7 +15,7 @@ options[:ip_ranges] = []
 
 
 opts = OptionParser.new do |opts|
-  opts.banner = 'Usage: flavor_maker.rb [options]'
+  opts.banner = 'Usage: bundle exec converter [options]'
 
   opts.on('--manifest MANIFEST', 'Specifies the manifest to convert') do |v| options[:manifest] = v end
 
