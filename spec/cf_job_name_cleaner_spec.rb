@@ -23,12 +23,12 @@ disk_pools:
 
   describe '.sanitize_partition' do
     it 'should remove the guid from the nfs server' do
-      CFJobNameCleaner.remove_guid yaml, 'nfs_server-partition'
-      expect(yaml['resource_pools'][0]['name']).to eql 'nfs_server_partition'
-      expect(yaml['jobs'][0]['name']).to eql 'nfs_server_partition'
-      expect(yaml['jobs'][0]['resource_pool']).to eql 'nfs_server_partition'
-      expect(yaml['jobs'][0]['persistent_disk_pool']).to eql 'nfs_server_partition'
-      expect(yaml['disk_pools'][0]['name']).to eql 'nfs_server_partition'
+      CFJobNameCleaner.remove_guid yaml
+      expect(yaml['resource_pools'][0]['name']).to eql 'nfs_server-partition'
+      expect(yaml['jobs'][0]['name']).to eql 'nfs_server-partition'
+      expect(yaml['jobs'][0]['resource_pool']).to eql 'nfs_server-partition'
+      expect(yaml['jobs'][0]['persistent_disk_pool']).to eql 'nfs_server-partition'
+      expect(yaml['disk_pools'][0]['name']).to eql 'nfs_server-partition'
     end
   end
 end

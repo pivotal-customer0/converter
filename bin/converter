@@ -7,6 +7,7 @@ require 'converter/authentication'
 require 'converter/cf_domain'
 require 'converter/cf_network'
 require 'converter/replacement_pair'
+require 'converter/cf_job_name_cleaner'
 
 options = {}
 options[:password] = 'admin'
@@ -93,25 +94,6 @@ def swap_stemcells(yaml)
   end
 end
 
-def sanitize_partition(yaml)
-  yaml.each do |key, value|
-    if 'name' == key and value.match /partition-\w+/
-      new_value = value.sub(/partition.*/, 'partition')
-      YAMLHelper.change_value_sub_strings(yaml, value, new_value)
-      yaml[key] = new_value
-    end
-    if value.is_a? Array
-      value.each do |v|
-        unless v.is_a? String
-          sanitize_partition(v)
-        end
-      end
-    elsif value.is_a? Hash
-      sanitize_partition(value)
-    end
-  end
-end
-
 ###############################################################################
 # script starts here
 ###############################################################################
@@ -148,7 +130,7 @@ unless options[:dns].nil?
 end
 
 if options[:sanitize_partition]
-  sanitize_partition(node)
+  CFJobNameCleaner.remove_guid(node)
 end
 
 #TODO We don't let anyone change the stemcell yet became we only have the one.
