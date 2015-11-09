@@ -82,7 +82,7 @@ def swap_stemcells(yaml)
     if key == 'stemcell'
       yaml[key] = {
           'name' =>  'bosh-esxcloud-esxi-ubuntu-trusty-go_agent',
-          'version' => '0000'
+          'version' => '0001'
       }
     elsif yaml[key].is_a? Hash
       swap_stemcells(yaml[key])
