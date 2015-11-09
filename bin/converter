@@ -117,7 +117,6 @@ end
 ###############################################################################
 node = YAML.load_file options[:manifest]
 
-
 node['resource_pools'].each do |v|
   FlavorMaker.convert_vsphere_cloud_props_to_photon v
 end
