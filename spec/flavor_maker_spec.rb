@@ -242,10 +242,11 @@ disk_pools:
         cloud_properties = disk_pool['cloud_properties']
       end
 
-      it 'has a pcf-1 disk_flavor added to cloud props' do
-        expect(cloud_properties['disk_flavor']).to eql 'pcf-1'
+      it 'has a core-200 disk_flavor added to cloud props' do
+        expect(cloud_properties['disk_flavor']).to eql 'core-200'
         expect(disk_pool['disk_size'] = 1024)
       end
+
 
     end
   end

@@ -50,9 +50,7 @@ class FlavorMaker
 
   def self.convert_vsphere_disk_pool_to_photon(yaml)
     YAMLHelper.find(yaml, 'disk_size') do |disk_pool|
-      disk = disk_pool['disk_size']
-      disk_flavor = self.get_best_fitting_photon_disk_flavor(disk)
-      disk_pool['cloud_properties']={ 'disk_flavor' => disk_flavor}
+      disk_pool['cloud_properties']={ 'disk_flavor' => 'core-200'}
     end
   end
 
