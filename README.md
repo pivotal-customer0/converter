@@ -37,6 +37,9 @@ Usage: bundle exec converter [options]
                                      but it makes life hard for a human when reading. This flag drops it
         --dns DNS                    Overwrite (no matching) DNS with argument. If not provided we leave whatevers in the
                                      manifest alone.
+                                     
+        --portgroup PortGroup        Overwrite Donor Network (no matching). If not provided we leave whatevers in the
+                                     manifest alone.
 ```
 
 see the various scripts in [bin](https://github.com/pivotal-customer0/converter/tree/master/bin) for more example usages

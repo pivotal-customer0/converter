@@ -6,6 +6,7 @@ require 'converter/yaml_helper'
 require 'converter/authentication'
 require 'converter/cf_domain'
 require 'converter/cf_network'
+require 'converter/cf_portgroup'
 require 'converter/replacement_pair'
 require 'converter/cf_job_name_cleaner'
 
@@ -57,6 +58,11 @@ opts = OptionParser.new do |opts|
   opts.on('--dns DNS', 'Overwrite (no matching) DNS with argument. If not provided we leave whatevers in the',
           'manifest alone.') do |v|
     options[:dns] = v
+  end
+  
+  opts.on('--portgroup PortGrp', 'Overwrite Donor Network (no matching). If not provided we leave whatevers in the',
+          'manifest alone.') do |v|
+    options[:portgrp] = v
   end
 
   options[:help] = opts.help
@@ -127,6 +133,10 @@ end
 
 unless options[:dns].nil?
    CFNetwork.set_dns node, options[:dns]
+end
+
+unless options[:portgrp].nil?
+   CFPortGroup.set_portgrp node, options[:portgrp]
 end
 
 if options[:sanitize_partition]
