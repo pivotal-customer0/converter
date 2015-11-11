@@ -199,7 +199,7 @@ resource_pools:
 ---
 disk_pools:
 - name: consul_server-partition-a24ba4e9a226f8bd1d83
-  disk_size: 10_000
+  disk_size: 1024
       END
 
       before do
@@ -211,7 +211,7 @@ disk_pools:
 
       it 'has a core-200 disk_flavor added to cloud props' do
         expect(cloud_properties['disk_flavor']).to eql 'core-200'
-        expect(disk_pool['disk_size'] = '10_00')
+        #expect(disk_pool['disk_size']).to eql 1_000
       end
 
 
