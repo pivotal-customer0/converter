@@ -62,54 +62,13 @@ describe FlavorMaker do
 
   describe '.photon_disk_from_disk_size' do
     context 'given 1024 mb' do
-      it 'returns pcf-1' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(1024)).to eql('pcf-1')
+      it 'returns core-200' do
+        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(1024)).to eql('core-200')
       end
     end
-    context 'given 2048 mb' do
-      it 'returns pcf-2' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(2048)).to eql('pcf-2')
-      end
-    end
-
-    context 'given 4096 mb' do
-      it 'returns pcf-4' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(4096)).to eql('pcf-4')
-      end
-    end
-
-    context 'given 20480 mb' do
-      it 'returns pcf-20' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(20480)).to eql('pcf-20')
-      end
-    end
-
-    context 'given 30000 mb' do
-      it 'returns pcf-32' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(30000)).to eql('pcf-32')
-      end
-    end
-
-    context 'given 32768 mb' do
-      it 'returns pcf-32' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(32768)).to eql('pcf-32')
-      end
-    end
-
     context 'given 65536 mb' do
-      it 'returns pcf-64' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(65536)).to eql('pcf-64')
-      end
-    end
-
-    context 'given 100000 mb' do
-      it 'returns pcf-100' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(100000)).to eql('pcf-100')
-      end
-    end
-    context 'given 102400 mb' do
-      it 'returns pcf-100' do
-        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(102400)).to eql('pcf-100')
+      it 'returns core-200' do
+        expect(FlavorMaker.get_best_fitting_photon_disk_flavor(65536)).to eql('core-200')
       end
     end
   end
@@ -142,16 +101,16 @@ resource_pools:
         cloud_properties = yml['resource_pools'][0]['cloud_properties']
       end
 
-      it 'only has two cloud properties after conversion' do
-        expect(cloud_properties.keys.length).to eql(2)
-      end
-
       it 'has a core-100 vm-flavor' do
         expect(cloud_properties['vm_flavor']).to eql 'core-100'
       end
 
-      it 'has a pcf-2 disk_flavor' do
-        expect(cloud_properties['disk_flavor']).to eql 'pcf-2'
+      it 'has a core-200 disk_flavor' do
+        expect(cloud_properties['disk_flavor']).to eql 'core-200'
+      end
+
+      it 'has an vm_attached_disk_size_gb of 1' do
+        expect(cloud_properties['vm_attached_disk_size_gb']).to eql 2
       end
     end
 
@@ -184,8 +143,12 @@ resource_pools:
         expect(cloud_properties['vm_flavor']).to eql 'core-220'
       end
 
-      it 'has a pcf-32 disk_flavor' do
-        expect(cloud_properties['disk_flavor']).to eql 'pcf-32'
+      it 'has a core-200 disk_flavor' do
+        expect(cloud_properties['disk_flavor']).to eql 'core-200'
+      end
+
+      it 'has an vm_attached_disk_size_gb of 32 ' do
+        expect(cloud_properties['vm_attached_disk_size_gb']).to eql 30
       end
     end
 
@@ -218,8 +181,12 @@ resource_pools:
         expect(cloud_properties['vm_flavor']).to eql 'core-240'
       end
 
-      it 'has a pcf-32 disk_flavor' do
-        expect(cloud_properties['disk_flavor']).to eql 'pcf-64'
+      it 'has a core-200 disk_flavor' do
+        expect(cloud_properties['disk_flavor']).to eql 'core-200'
+      end
+
+      it 'has an vm_attached_disk_size_gb of 16 ' do
+        expect(cloud_properties['vm_attached_disk_size_gb']).to eql 64
       end
     end
   end
@@ -232,7 +199,7 @@ resource_pools:
 ---
 disk_pools:
 - name: consul_server-partition-a24ba4e9a226f8bd1d83
-  disk_size: 1024
+  disk_size: 10_000
       END
 
       before do
@@ -244,7 +211,7 @@ disk_pools:
 
       it 'has a core-200 disk_flavor added to cloud props' do
         expect(cloud_properties['disk_flavor']).to eql 'core-200'
-        expect(disk_pool['disk_size'] = 1024)
+        expect(disk_pool['disk_size'] = '10_00')
       end
 
 
