@@ -51,7 +51,7 @@ opts = OptionParser.new do |opts|
 
   opts.on('--sanitize-partition', 'The thing opsman does with the guid after the partition makes sense for a machine',
     'but it makes life hard for a human when reading. This flag drops it'
-  ) do |v|
+  ) do
     options[:sanitize_partition] = true
   end
 
@@ -60,7 +60,7 @@ opts = OptionParser.new do |opts|
     options[:dns] = v
   end
   
-  opts.on('--portgroup PortGrp', 'Overwrite Donor Network (no matching). If not provided we leave whatevers in the',
+  opts.on('--portgroup PortGroup', 'Overwrite donor network name(no matching). If not provided we leave whatever is in the',
           'manifest alone.') do |v|
     options[:portgrp] = v
   end
@@ -136,7 +136,7 @@ unless options[:dns].nil?
 end
 
 unless options[:portgrp].nil?
-   CFPortGroup.set_portgrp node, options[:portgrp]
+   CFPortGroup.set_portgroup node, options[:portgrp]
 end
 
 if options[:sanitize_partition]
