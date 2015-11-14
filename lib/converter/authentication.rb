@@ -2,19 +2,23 @@ require 'converter/yaml_helper'
 class Authentication
   def self.set_cf_admin_password(yaml, password)
     old_password = self.get_cf_admin_password yaml
-    self.set_uaa_scim_password yaml, password
+    self.set_uaa_scim_passwords yaml, password
     YAMLHelper.change_value_sub_strings yaml, old_password, password
   end
 
-  def self.set_uaa_scim_password(yaml, password)
+  #This only changes admin, system_verification and system_services
+  def self.set_uaa_scim_passwords(yaml, password)
     if yaml.respond_to?(:key?) && yaml.key?('scim')
-      admin_user = yaml['scim']['users'][0]
-      split_user = admin_user.split('|')
-      split_user[1] = password
-      joined_admin_user = split_user.join('|')
-      yaml['scim']['users'][0]= joined_admin_user
+      users = yaml['scim']['users']
+      users.each_with_index do |user, user_idx|
+        split_user = user.split('|')
+        next unless %w(admin system_verification system_services).include? split_user[0]
+        split_user[1] = password
+        joined_admin_user = split_user.join('|')
+        users[user_idx] = joined_admin_user
+      end
     elsif yaml.respond_to?(:each)
-      yaml.find{ |*a| self.set_uaa_scim_password(a.last, password) }
+      yaml.find{ |*a| self.set_uaa_scim_passwords(a.last, password) }
     end
   end
 
