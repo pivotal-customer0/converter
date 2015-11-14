@@ -136,7 +136,7 @@ unless options[:dns].nil?
 end
 
 unless options[:portgroup].nil?
-   CFPortGroup.set_portgroup node, options[:portgrp]
+   CFPortGroup.set_portgroup node, options[:portgroup]
 end
 
 if options[:sanitize_partition]
