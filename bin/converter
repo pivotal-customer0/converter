@@ -62,7 +62,7 @@ opts = OptionParser.new do |opts|
   
   opts.on('--portgroup PortGroup', 'Overwrite donor network name(no matching). If not provided we leave whatever is in the',
           'manifest alone.') do |v|
-    options[:portgrp] = v
+    options[:portgroup] = v
   end
 
   options[:help] = opts.help
@@ -135,7 +135,7 @@ unless options[:dns].nil?
    CFNetwork.set_dns node, options[:dns]
 end
 
-unless options[:portgrp].nil?
+unless options[:portgroup].nil?
    CFPortGroup.set_portgroup node, options[:portgrp]
 end
 
