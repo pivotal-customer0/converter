@@ -9,11 +9,12 @@ require 'converter/cf_network'
 require 'converter/cf_portgroup'
 require 'converter/replacement_pair'
 require 'converter/cf_job_name_cleaner'
+require 'converter/bosh_director'
 
 options = {}
 options[:password] = 'admin'
 options[:ip_ranges] = []
-
+options[:director_uuid] = 'ignore'
 
 opts = OptionParser.new do |opts|
   opts.banner = 'Usage: bundle exec converter [options]'
@@ -65,8 +66,13 @@ opts = OptionParser.new do |opts|
     options[:portgroup] = v
   end
 
-  options[:help] = opts.help
+  opts.on('--director-uuid DirectorUUID', 'Change the UUID of the director in the new manifest',
+          'defaults to "ignore"'
+  ) do |v|
+    options[:director_uuid] = v
+  end
 
+  options[:help] = opts.help
 end
 opts.parse!
 
@@ -116,6 +122,8 @@ node['disk_pools'].each_with_index do |v|
 end
 
 node['name'] = "#{name}-photon"
+
+BoshDirector.change_director_id node, options[:director_uuid]
 
 if 'cf' == name
   Authentication.set_cf_admin_password node, options[:password]
