@@ -15,6 +15,7 @@ options = {}
 options[:password] = 'admin'
 options[:ip_ranges] = []
 options[:director_uuid] = 'ignore'
+options[:stemcell_version] = 3177
 
 opts = OptionParser.new do |opts|
   opts.banner = 'Usage: bundle exec converter [options]'
@@ -72,6 +73,10 @@ opts = OptionParser.new do |opts|
     options[:director_uuid] = v
   end
 
+  opts.on('--stemcell version', "Use a particular stemcell version, defaults to #{options[:stemcell_version]}") do |v|
+    options[:stemcell_version] = v
+  end
+
   options[:help] = opts.help
 end
 opts.parse!
@@ -89,18 +94,18 @@ end
 # The hot mess below is why we should script while watching moves... this whole thing is a "could we" experiment
 # it appears the approach is viable but the tool requires more investment.
 
-def swap_stemcells(yaml)
+def swap_stemcells(yaml, stemcell_version)
   yaml.each_key do | key |
     if key == 'stemcell'
       yaml[key] = {
-          'name' =>  'bosh-esxcloud-esxi-ubuntu-trusty-go_agent',
-          'version' => '0001'
+          'name' =>  'bosh-vsphere-esxi-ubuntu-trusty-go_agent',
+          'version' => stemcell_version
       }
     elsif yaml[key].is_a? Hash
-      swap_stemcells(yaml[key])
+      swap_stemcells(yaml[key], stemcell_version)
     elsif yaml[key].is_a? Array
       yaml[key].each do |value|
-        swap_stemcells(value) if value.is_a? Hash
+        swap_stemcells(value, stemcell_version) if value.is_a? Hash
       end
     end #TODO this logic misses arrays of arrays which for now does not seem to hurt
   end
@@ -152,6 +157,6 @@ if options[:sanitize_partition]
 end
 
 #TODO We don't let anyone change the stemcell yet became we only have the one.
-swap_stemcells node
+swap_stemcells node, options[:stemcell_version]
 File.open(options[:output_path], 'w') { |f| YAML.dump(node, f) }
 
