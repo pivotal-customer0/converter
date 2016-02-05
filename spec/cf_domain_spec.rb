@@ -118,5 +118,41 @@ jobs:
         end
       end
     end
+
+    context 'in a scs manifest' do
+      yaml = nil
+      manifest=<<-END
+---
+jobs:
+- name: deploy-service-broker
+  properties:
+    domain: cf.haas-02.pez.pivotal.io
+    app_domains:
+    - pcfaas-slot7.pez.pivotal.io
+- name: register-service-broker
+  properties:
+    domain: cf.haas-02.pez.pivotal.io
+    app_domains:
+    - pcfaas-slot7.pez.pivotal.io
+      END
+
+      before do
+        yaml = YAML.load manifest
+      end
+
+      it 'should_get_the_current_domain' do
+        expect(CFDomain.get_domain yaml).to eql('cf.haas-02.pez.pivotal.io')
+      end
+
+      context 'when changing domains' do
+
+        before do
+          CFDomain.change_domain yaml, new_domain
+        end
+
+      end
+    end
+
+
   end
 end

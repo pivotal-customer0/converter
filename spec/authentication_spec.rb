@@ -1,5 +1,6 @@
 require 'rspec'
 require 'converter/authentication'
+require 'securerandom'
 
 describe 'changes the cf admin password' do
   yaml = nil
